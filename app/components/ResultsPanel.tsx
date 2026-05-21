@@ -149,7 +149,7 @@ export default function ResultsPanel({ response, searchRequest, onSearchAgain }:
 
   const handleCopy = () => {
     const text = filteredLeads
-      .map((l) => `${l.name} | ${l.type} | ${l.country} | Score: ${l.score} | ${l.website ?? ""} | ${l.email ?? ""}`)
+      .map((l) => `${l.name} | ${l.type} | ${l.country} | Score: ${l.score} | ${l.website ?? ""} | ${l.email ?? ""} | ${l.phone ?? "None"}`)
       .join("\n");
     navigator.clipboard.writeText(text);
     setCopyMsg("Copied!");

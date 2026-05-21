@@ -8,6 +8,7 @@ import {
   validateInfluencerLeads,
 } from "@/app/lib/influencerProfiles";
 import { Lead, SearchRequest, SearchResponse } from "@/app/types";
+import { scrapeWebsiteForContactInfo } from "@/app/lib/contactScraper";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -279,7 +280,7 @@ INFLUENCER RULES:
 RULES:
 1. Only include leads that directly match a numbered search result — DO NOT invent companies or people
 2. website must be a URL that appears in that result (Confirmed profile URL or Source URL for businesses)
-3. Never invent email addresses — null unless explicitly in the snippet
+3. Never invent email addresses or phone numbers — null unless explicitly in the snippet or result
 4. Never invent follower counts — null unless a number appears in the snippet
 5. For micro range (0–1K): only if follower count in snippet is under 1,000 or clearly described as nano/micro
 6. verified: true ONLY when you are confident the profile/company exists in the search result; otherwise false
@@ -304,6 +305,7 @@ Respond with ONLY a valid JSON object — no markdown:
       "instagram": "@handle — required when platform is Instagram; build from profile URL if needed",
       "linkedin": "LinkedIn URL if in results or null",
       "email": "email if in content or null",
+      "phone": "phone number if in content or null",
       "followers": "number/range if mentioned or null",
       "score": 8,
       "legitimacy": 9,
@@ -506,6 +508,38 @@ export async function POST(req: NextRequest) {
     const numbered = merged.map((lead, i) => ({ ...lead, id: i + 1 }));
     const sorted = numbered.sort((a, b) => b.score - a.score);
     const topLeads = sorted.slice(0, count);
+
+    // Enrich leads with phone numbers by scraping their website unless explicitly disabled.
+    if (process.env.ENABLE_PHONE_SCRAPER !== "false") {
+      try {
+        // limit parallelism to small batches to avoid overload
+        const concurrency = 3;
+        for (let i = 0; i < topLeads.length; i += concurrency) {
+          const batch = topLeads.slice(i, i + concurrency);
+          await Promise.all(
+            batch.map(async (lead) => {
+              if (!lead.phone && lead.website) {
+                try {
+                  const contact = await scrapeWebsiteForContactInfo(lead.website);
+                  if (contact.phone) {
+                    lead.phone = contact.phone;
+                    lead.verification_note = (lead.verification_note ?? "") + "; Phone found on website";
+                  }
+                  if (contact.email && !lead.email) {
+                    lead.email = contact.email;
+                    lead.verification_note = (lead.verification_note ?? "") + "; Email found on website";
+                  }
+                } catch (e) {
+                  console.error("Phone scrape error for", lead.website, e);
+                }
+              }
+            })
+          );
+        }
+      } catch (e) {
+        console.error("Phone enrichment failed:", e);
+      }
+    }
 
     const avgScore =
       topLeads.length > 0

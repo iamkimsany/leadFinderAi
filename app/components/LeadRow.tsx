@@ -146,6 +146,15 @@ export default function LeadRow({ lead, rank }: Props) {
                   )}
                 </div>
               )}
+              {lead.phone && (
+                <div className="text-white/30 text-xs mt-0.5 truncate max-w-[200px]">
+                  {lead.verified ? (
+                    lead.phone
+                  ) : (
+                    <span className="text-warning/50">{lead.phone} (unverified)</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </td>
@@ -188,6 +197,11 @@ export default function LeadRow({ lead, rank }: Props) {
                 </span>
               )
             )}
+            {lead.phone && (
+              <span className={`text-xs font-medium ${lead.verified ? "text-green-300" : "text-warning/50"}`}>
+                📞 {lead.phone}
+              </span>
+            )}
             {lead.instagram && (
               <span
                 className={`text-xs font-medium ${lead.verified ? "text-pink-400" : "text-warning/50"}`}
@@ -196,7 +210,7 @@ export default function LeadRow({ lead, rank }: Props) {
                 {lead.instagram}
               </span>
             )}
-            {!lead.website && !lead.instagram && !lead.linkedin && (
+            {!lead.website && !lead.instagram && !lead.linkedin && !lead.phone && (
               <span className="text-white/20 text-xs">No links</span>
             )}
           </div>
@@ -268,6 +282,15 @@ export default function LeadRow({ lead, rank }: Props) {
                       label="LinkedIn"
                       icon="💼"
                       verified={lead.verified}
+                    />
+                  )}
+                  {lead.phone && (
+                    <ContactLink
+                      href={`tel:${lead.phone.replace(/\s+/g, "")}`}
+                      label={lead.phone}
+                      icon="📞"
+                      verified={lead.verified}
+                      external={false}
                     />
                   )}
                   {lead.instagram && (

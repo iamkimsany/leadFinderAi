@@ -464,6 +464,7 @@ export function buildLeadsFromSearchItems(
       instagram: handle,
       linkedin: null,
       email: null,
+      phone: null,
       followers: null,
       score: 6,
       legitimacy: 7,

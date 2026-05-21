@@ -17,6 +17,7 @@ export interface Lead {
   instagram: string | null;
   linkedin: string | null;
   email: string | null;
+  phone: string | null;
   followers: string | null;
   score: number;
   legitimacy: number;
